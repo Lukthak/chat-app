@@ -21,7 +21,7 @@ db.serialize(() => {
   `);
 });
 
-app.use(express.static('../frontend'));
+app.use(express.static('../public'));
 
 const interfaces = os.networkInterfaces();
 const localIP = Object.values(interfaces)
