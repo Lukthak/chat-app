@@ -33,7 +33,7 @@ socket.on('clear chat', () => {
 });
 
 socket.on('user count', count => {
-  userCountDiv.textContent = ` ${count}${count !== 1 ? 's' : ''}`;
+  userCountDiv.textContent = ` ${count}${count !== 1 ? '' : ''}`;
 });
 
 // 2) Emitir NUEVO USUARIO solo después:
