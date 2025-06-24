@@ -59,8 +59,8 @@ io.on('connection', socket => {
   });
 
   // === Realm ===
-  socket.on('realm join', ({ x, y }) => {
-    realmPlayers[socket.id] = { x, y };
+  socket.on('realm join', ({ x, y, name }) => {
+    realmPlayers[socket.id] = { x, y, name };
     io.emit('realm state', realmPlayers);
   });
 
@@ -68,6 +68,14 @@ io.on('connection', socket => {
     if (realmPlayers[socket.id]) {
       realmPlayers[socket.id].x = x;
       realmPlayers[socket.id].y = y;
+      io.emit('realm state', realmPlayers);
+    }
+  });
+
+  socket.on('realm bubble', text => {
+    if (realmPlayers[socket.id]) {
+      realmPlayers[socket.id].bubble = text;
+      realmPlayers[socket.id].bubbleTime = Date.now();
       io.emit('realm state', realmPlayers);
     }
   });

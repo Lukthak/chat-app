@@ -4,10 +4,17 @@ const chat = document.getElementById('chat');
 const input = document.getElementById('message');
 const userCountDiv = document.getElementById('user-count');
 
-let nickname = '';
+let nickname = localStorage.getItem('nickname');
 while (!nickname) {
   nickname = prompt('(̿▀̿ ̿Ĺ̯̿̿▀̿ ̿)̄  - Nickname please');
 }
+localStorage.setItem('nickname', nickname);
+
+document.getElementById('change-user').addEventListener('click', e => {
+  e.preventDefault();
+  localStorage.removeItem('nickname');
+  location.reload();
+});
 
 // 1) Registrar listeners ANTES de emitir:
 socket.on('previous messages', rows => {

@@ -7,7 +7,7 @@
   <link rel="icon" href="/favicon.png" type="image/x-icon" />
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: monospace;
       background: #311818;
       color: #eee;
       display: flex;
@@ -54,15 +54,33 @@
       opacity: 0.85;
       pointer-events: none;
     }
+    .corner-links {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 14px;
+    }
+    .corner-links a {
+      color: #888;
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
   <div id="chat"></div>
   <input id="message" placeholder="Message ..." autocomplete="off" />
-  <div id="user-count">Log In ...</div>
+
+  <div id="user-count">Please login.</div>
+
+  <div class="corner-links">
+    <a href="/realm.html">go to realm</a>
+    <a href="#" id="change-user">change user</a>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
   <script src="script.js"></script>
-  <a href="/realm.html" style="position: fixed; bottom: 10px; left: 10px; font-size: 14px; text-decoration: none; color: #888;">go to realm</a>
-
 </body>
 </html>
