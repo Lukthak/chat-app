@@ -2,67 +2,78 @@ const socket = io();
 
 const chat = document.getElementById('chat');
 const input = document.getElementById('message');
+const userCountDiv = document.getElementById('user-count');
 
 let nickname = '';
 while (!nickname) {
-  nickname = prompt('Ingresa tu nickname:');
-}
-socket.emit('new user', nickname); // << Notifica al servidor
-
-// Web Audio y sonido
-const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-let audioBuffer = null;
-
-fetch('/sound.mp3')
-  .then((res) => res.arrayBuffer())
-  .then((data) => audioContext.decodeAudioData(data))
-  .then((buffer) => (audioBuffer = buffer))
-  .catch((err) => console.error('Error cargando sonido:', err));
-
-function playSoundWithRandomPitch() {
-  if (!audioBuffer) return;
-  const source = audioContext.createBufferSource();
-  source.buffer = audioBuffer;
-  source.playbackRate.value = 0.95 + Math.random() * 0.1;
-  source.connect(audioContext.destination);
-  source.start();
+  nickname = prompt('(̿▀̿ ̿Ĺ̯̿̿▀̿ ̿)̄  - Nickname please');
 }
 
-function appendMessage(user, text, system = false) {
-  const div = document.createElement('div');
-  div.textContent = system ? `✨ ${text}` : `${user}: ${text}`;
-  if (system) div.style.color = 'limegreen';
-  chat.appendChild(div);
-  chat.scrollTop = chat.scrollHeight;
-}
-
-socket.on('previous messages', (messages) => {
-  messages.forEach(({ user, text }) => appendMessage(user, text));
+// 1) Registrar listeners ANTES de emitir:
+socket.on('previous messages', rows => {
+  rows.forEach(({ user, text, system }) => {
+    if (system === 1) appendMsg('', text, 'system-message');
+    else if (system === 2) appendMsg('', text, 'user-left');
+    else appendMsg(user, text);
+  });
 });
 
 socket.on('chat message', ({ user, text }) => {
-  appendMessage(user, text);
-  if (user !== nickname) playSoundWithRandomPitch();
+  appendMsg(user, text);
+  if (user !== nickname) playSound();
 });
 
-socket.on('user joined', (user) => {
-  appendMessage('', `${user} se ha unido al chat`, true);
+socket.on('system message', ({ text, type }) => {
+  if (type === 'join') appendMsg('', text, 'system-message');
+  else appendMsg('', text, 'user-left');
 });
 
 socket.on('clear chat', () => {
   chat.innerHTML = '';
 });
 
-function sendMessage() {
-  const text = input.value.trim();
-  if (!text) return;
-  socket.emit('chat message', { user: nickname, text });
-  input.value = '';
+socket.on('user count', count => {
+  userCountDiv.textContent = ` ${count}${count !== 1 ? 's' : ''}`;
+});
+
+// 2) Emitir NUEVO USUARIO solo después:
+socket.emit('new user', nickname);
+
+// 3) Funciones auxiliares:
+
+// Sonido
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let audioBuffer = null;
+fetch('/sound.mp3')
+  .then(r => r.arrayBuffer())
+  .then(d => audioCtx.decodeAudioData(d))
+  .then(b => audioBuffer = b)
+  .catch(() => {});
+
+function playSound() {
+  if (!audioBuffer) return;
+  const src = audioCtx.createBufferSource();
+  src.buffer = audioBuffer;
+  src.playbackRate.value = 0.95 + Math.random() * 0.1;
+  src.connect(audioCtx.destination);
+  src.start();
 }
 
-input.addEventListener('keydown', (e) => {
+function appendMsg(user, text, cls = '') {
+  const div = document.createElement('div');
+  div.textContent = user ? `${user}: ${text}` : text;
+  if (cls) div.className = cls;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// Enviar mensaje con Enter
+input.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
-    e.preventDefault();
-    sendMessage();
+    const txt = input.value.trim();
+    if (txt) {
+      socket.emit('chat message', { user: nickname, text: txt });
+      input.value = '';
+    }
   }
 });

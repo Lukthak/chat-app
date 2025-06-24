@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #222;
+      background: #311818;
       color: #eee;
       display: flex;
       flex-direction: column;
@@ -15,19 +15,16 @@
       height: 100vh;
       margin: 0;
     }
-
     #chat {
-      flex: none; /* Evita que crezca dinámicamente */
-      width: 300px; /* Ancho fijo */
-      height: 400px; /* Alto fijo */
-      overflow-y: auto; /* Muestra scroll si hay mensajes extra */
+      width: 300px;
+      height: 400px;
+      overflow-y: auto;
       margin: 20px 0;
-      border: 1px solid #6c0000;
+      border: 2px solid #9a0000;
       padding: 10px;
       background: #333;
       border-radius: 5px;
     }
-
     #message {
       width: 300px;
       padding: 10px;
@@ -36,11 +33,32 @@
       font-size: 1em;
       outline: none;
     }
+    .system-message {
+      color: rgb(238, 150, 144);
+      font-style: italic;
+    }
+    .user-left {
+      color: gray;
+      font-style: italic;
+    }
+    #user-count {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: #111;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.9em;
+      color: rgb(238, 150, 144);
+      opacity: 0.85;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
   <div id="chat"></div>
-  <input type="text" id="message" placeholder="Escribí tu mensaje y presioná Enter" autocomplete="off" />
+  <input id="message" placeholder="Message ..." autocomplete="off" />
+  <div id="user-count">Log In ...</div>
   <script src="/socket.io/socket.io.js"></script>
   <script src="script.js"></script>
 </body>
