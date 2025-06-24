@@ -33,8 +33,10 @@ socket.on('clear chat', () => {
 });
 
 socket.on('user count', count => {
-  userCountDiv.textContent = ` ${count}${count !== 1 ? '' : ''}`;
+  const palabra = count === 1 ? 'Online' : 'Online';
+  userCountDiv.textContent = `${count} ${palabra}`;
 });
+
 
 // 2) Emitir NUEVO USUARIO solo después:
 socket.emit('new user', nickname);
