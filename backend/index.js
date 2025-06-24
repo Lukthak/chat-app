@@ -1,26 +1,12 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const sqlite3 = require('sqlite3').verbose();
 const os = require('os');
 const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
-
-const db = new sqlite3.Database('./chat.db');
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user TEXT,
-      text TEXT,
-      system INTEGER DEFAULT 0,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-});
 
 app.use(express.static(path.join(__dirname, '../public')));
 
@@ -30,6 +16,7 @@ const localIP = Object.values(interfaces)
   .find(d => d.family === 'IPv4' && !d.internal)?.address || 'localhost';
 
 const connectedUsers = new Map();
+const messages = []; // 🔥 Mensajes solo en memoria
 
 function broadcastUserCount() {
   io.emit('user count', connectedUsers.size);
@@ -39,46 +26,45 @@ io.on('connection', socket => {
   console.log('🟢 Conexión entrante');
 
   // 1) Enviar historial
-  db.all('SELECT user, text, system FROM messages ORDER BY timestamp ASC', (err, rows) => {
-    if (!err) socket.emit('previous messages', rows);
-  });
+  socket.emit('previous messages', messages);
 
-  // 2) Enviar conteo actual al conectar
+  // 2) Enviar conteo actual
   socket.emit('user count', connectedUsers.size);
 
-  // 3) Esperar al nickname
+  // 3) Nuevo usuario
   socket.on('new user', nickname => {
     connectedUsers.set(socket.id, nickname);
 
     const joinText = `${nickname} se ha unido al chat`;
+    const msg = { user: null, text: joinText, system: 1 };
+    messages.push(msg);
     io.emit('system message', { text: joinText, type: 'join' });
-    db.run('INSERT INTO messages (user, text, system) VALUES (?, ?, ?)', [null, joinText, 1]);
 
     console.log(`✅ ${nickname} se unió`);
     broadcastUserCount();
   });
 
-  // 4) Mensajes de chat
+  // 4) Mensaje de chat
   socket.on('chat message', ({ user, text }) => {
     if (text.trim().toUpperCase() === '!CLEAR') {
-      db.run('DELETE FROM messages', () => {
-        io.emit('clear chat');
-        console.log('🧼 Chat limpiado');
-      });
+      messages.length = 0; // borra todos
+      io.emit('clear chat');
+      console.log('🧼 Chat limpiado');
     } else {
-      db.run('INSERT INTO messages (user, text) VALUES (?, ?)', [user, text], () => {
-        io.emit('chat message', { user, text });
-      });
+      const msg = { user, text };
+      messages.push(msg);
+      io.emit('chat message', msg);
     }
   });
 
-  // 5) Desconexión
+  // 5) Usuario se va
   socket.on('disconnect', () => {
     const nickname = connectedUsers.get(socket.id);
     if (nickname) {
       const leaveText = `${nickname} se ha retirado del chat`;
+      const msg = { user: null, text: leaveText, system: 2 };
+      messages.push(msg);
       io.emit('system message', { text: leaveText, type: 'leave' });
-      db.run('INSERT INTO messages (user, text, system) VALUES (?, ?, ?)', [null, leaveText, 2]);
 
       console.log(`🔴 ${nickname} se desconectó`);
       connectedUsers.delete(socket.id);
