@@ -17,6 +17,7 @@ const localIP = Object.values(interfaces)
 
 const connectedUsers = new Map();
 const messages = []; // 🔥 Mensajes solo en memoria
+const realmPlayers = {}; // Jugadores del realm
 
 function broadcastUserCount() {
   io.emit('user count', connectedUsers.size);
@@ -57,6 +58,20 @@ io.on('connection', socket => {
     }
   });
 
+  // === Realm ===
+  socket.on('realm join', ({ x, y }) => {
+    realmPlayers[socket.id] = { x, y };
+    io.emit('realm state', realmPlayers);
+  });
+
+  socket.on('realm move', ({ x, y }) => {
+    if (realmPlayers[socket.id]) {
+      realmPlayers[socket.id].x = x;
+      realmPlayers[socket.id].y = y;
+      io.emit('realm state', realmPlayers);
+    }
+  });
+
   // 5) Usuario se va
   socket.on('disconnect', () => {
     const nickname = connectedUsers.get(socket.id);
@@ -70,6 +85,9 @@ io.on('connection', socket => {
       connectedUsers.delete(socket.id);
       broadcastUserCount();
     }
+
+    delete realmPlayers[socket.id];
+    io.emit('realm state', realmPlayers);
   });
 });
 
