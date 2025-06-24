@@ -1,0 +1,20 @@
+# Node.js
+node_modules/
+backend/node_modules/
+package-lock.json
+backend/package-lock.json
+
+# Logs
+*.log
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Visual Studio / VSCode
+.vscode/
+.vs/
+
+# Entornos
+.env
+.env.local
