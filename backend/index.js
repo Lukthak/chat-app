@@ -10,6 +10,7 @@ const io = new Server(server);
 
 const db = new sqlite3.Database('./chat.db');
 
+// Crear tabla si no existe
 db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS messages (
@@ -21,29 +22,42 @@ db.serialize(() => {
   `);
 });
 
+// Servir archivos estáticos del frontend
 app.use(express.static('../public'));
 
+// Obtener IP local
 const interfaces = os.networkInterfaces();
 const localIP = Object.values(interfaces)
   .flat()
   .find(details => details.family === 'IPv4' && !details.internal)?.address || 'localhost';
 
-io.on('connection', (socket) => {
-  console.log('Usuario conectado');
+const connectedUsers = new Map();
 
+io.on('connection', (socket) => {
+  console.log('🟢 Usuario conectado');
+
+  // Enviar historial al nuevo usuario
   db.all('SELECT user, text FROM messages ORDER BY timestamp ASC', (err, rows) => {
     if (!err) {
       socket.emit('previous messages', rows);
     }
   });
 
+  // Recibir nuevo usuario
+  socket.on('new user', (nickname) => {
+    connectedUsers.set(socket.id, nickname);
+    io.emit('user joined', nickname); // Anuncio global
+    console.log(`✅ ${nickname} se ha unido`);
+  });
+
+  // Recibir y guardar mensaje
   socket.on('chat message', ({ user, text }) => {
     if (text.trim().toUpperCase() === '!CLEAR') {
-      console.log(`!CLEAR detectado por ${user}`);
+      console.log(`🧹 !CLEAR detectado por ${user}`);
       db.run('DELETE FROM messages', (err) => {
         if (!err) {
           io.emit('clear chat');
-          console.log('Chat limpiado');
+          console.log('🧼 Chat limpiado');
         } else {
           console.error('Error limpiando chat:', err);
         }
@@ -59,12 +73,20 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Usuario desconectado
   socket.on('disconnect', () => {
-    console.log('Usuario desconectado');
+    const user = connectedUsers.get(socket.id);
+    if (user) {
+      io.emit('user left', user); // Anuncio global de salida
+      console.log(`🔴 ${user} se ha desconectado`);
+    } else {
+      console.log('🔴 Usuario anónimo desconectado');
+    }
+    connectedUsers.delete(socket.id);
   });
 });
 
-// Escuchar en todas las interfaces (red local)
+// Escuchar en todas las interfaces (localhost y red local)
 server.listen(3000, '0.0.0.0', () => {
-  console.log(`Servidor escuchando en http://${localIP}:3000`);
+  console.log(`🚀 Servidor escuchando en http://${localIP}:3000`);
 });
