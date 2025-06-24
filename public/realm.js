@@ -36,7 +36,7 @@ function draw() {
       ctx.font = '12px monospace';
       ctx.textAlign = 'center';
       ctx.fillStyle = '#000';
-      ctx.fillText(`(${p.bubble}`, p.x + 10, p.y - 5);
+      ctx.fillText(`(${p.bubble})`, p.x + 10, p.y - 5);
 ;
     }
 
